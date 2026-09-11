@@ -8,7 +8,7 @@ phase that performs a regression.
 
 Mathematical role
 ------------------
-The continuous-time GLE
+The continuous-time GLET
 
     dr/dt = Omega*r(t) - integral_0^t K(t-tau) r(tau) dtau + eta(t)
 

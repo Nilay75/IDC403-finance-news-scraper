@@ -51,19 +51,24 @@ import numpy as np
 import pandas as pd
 
 # ── the currency pair under study ────────────────────────────────────
-CURRENCY_PAIR = "REPLACE_WITH_YOUR_PAIR"   # any ticker your data source understands
+CURRENCY_PAIR = "USDINR=X"   # any ticker your data source understands
 
 # ── candidate coupled instruments ("network neighbors") ──────────────
 # you decide what belongs here -- other pairs, commodities, indices,
 # rate proxies, anything you hypothesize is coupled. Selection of what
 # actually matters happens statistically in Phase 4, not here.
 NEIGHBORS = [
-    # {"name": "REPLACE_ME", "ticker": "REPLACE_ME"},
+    {"name": "gold", "ticker": "GC=F"},
+    {"name": "crude_oil", "ticker": "CL=F"},
+    {"name": "eur_usd", "ticker": "EURUSD=X"},
+    {"name": "gbp_usd", "ticker": "GBPUSD=X"},
 ]
 
 # ── news topic categories ─────────────────────────────────────────────
-NEWS_CATEGORIES = [
-    # "REPLACE_ME",
+NEWS_CATEGORIES = ["RBI monetary policy",
+    "US Federal Reserve interest rate",
+    "crude oil prices India",
+    "India inflation",
 ]
 
 # ── demo-mode fallback sizes (used ONLY if the lists above are empty) ──

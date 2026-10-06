@@ -58,9 +58,10 @@ Per Monte Carlo path i and step h = 1, ..., H:
 The empirical distribution of {r_sim^(i)(t+h)} across the ensemble at
 each horizon h approximates the predictive distribution of r(t+h) under
 the estimated dynamics. Its mean is reported as the point forecast and
-its 5th/95th percentiles as a forecast interval. The interval widens
-with h, reflecting the compounding of memory-driven and
-stochastic-volatility uncertainty over the horizon.
+its 5th/95th percentiles as a forecast interval. The forecast interval
+is reported separately at each horizon; its width need not increase
+monotonically because the simulated dynamics and stochastic-volatility
+recursion determine the distribution at each step.
 
 Output: simulation_forecast.csv (h, date, pred_mean, pred_p05, pred_p95)
 """
@@ -165,10 +166,10 @@ def main():
 
     cum_mean = forecast["pred_mean"].sum()
     print(f"\n[phase6] cumulative expected log-return over {cfg.FORECAST_HORIZON} days: {cum_mean:.5f}")
-    print(f"[phase6] band widens with horizon: day-1 p05/p95 = "
-          f"[{forecast.iloc[0]['pred_p05']:.5f}, {forecast.iloc[0]['pred_p95']:.5f}]  |  "
-          f"day-{cfg.FORECAST_HORIZON} p05/p95 = "
-          f"[{forecast.iloc[-1]['pred_p05']:.5f}, {forecast.iloc[-1]['pred_p95']:.5f}]")
+   print(f"[phase6] forecast band: day-1 p05/p95 = "
+      f"[{forecast.iloc[0]['pred_p05']:.5f}, {forecast.iloc[0]['pred_p95']:.5f}]  |  "
+      f"day-{cfg.FORECAST_HORIZON} p05/p95 = "
+      f"[{forecast.iloc[-1]['pred_p05']:.5f}, {forecast.iloc[-1]['pred_p95']:.5f}]")
     print("[phase6] saved simulation_forecast.csv")
 
 

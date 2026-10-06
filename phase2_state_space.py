@@ -51,16 +51,28 @@ Synthetic data is NOT automatically used when real data fails.
 This prevents a failed live-data download from being mistaken for
 an empirical USD/INR result.
 """
-cat > phase2_state_space.py <<'PY'
+
 import argparse
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 import phase1_config as cfg
 
 
+# ---------------------------------------------------------------------
+# OPTIONAL YAHOO FINANCE DATA SOURCE
+# ---------------------------------------------------------------------
+
 def fetch_real_price(ticker: str, start: str, end: str) -> pd.Series:
+    """
+    Download historical price data from Yahoo Finance.
+
+    This is optional. The recommended reproducible experiment uses
+    a local CSV file instead.
+    """
+
     import yfinance as yf
 
     df = yf.download(
@@ -76,14 +88,20 @@ def fetch_real_price(ticker: str, start: str, end: str) -> pd.Series:
 
     close = df["Close"]
 
+    # yfinance may return a DataFrame instead of a Series.
     if isinstance(close, pd.DataFrame):
         if ticker in close.columns:
             close = close[ticker]
         else:
             close = close.iloc[:, 0]
 
-    close = pd.Series(close, name="price")
+    close = pd.Series(
+        close,
+        name="price"
+    )
+
     close.index = pd.to_datetime(close.index)
+
     close = close.dropna()
 
     if close.empty:
@@ -92,6 +110,10 @@ def fetch_real_price(ticker: str, start: str, end: str) -> pd.Series:
     return close
 
 
+# ---------------------------------------------------------------------
+# LOCAL CSV DATA SOURCE
+# ---------------------------------------------------------------------
+
 def load_price_csv(
     path: str,
     start: str,
@@ -99,6 +121,18 @@ def load_price_csv(
     date_column: str = "date",
     price_column: str = "price",
 ) -> pd.Series:
+    """
+    Load reproducible historical price data from a local CSV.
+
+    Expected format:
+
+        date,price
+        2020-01-01,71.35
+        2020-01-02,71.42
+        ...
+
+    Additional CSV columns are allowed.
+    """
 
     csv_path = Path(path)
 
@@ -137,6 +171,7 @@ def load_price_csv(
 
     df = df.sort_values(date_column)
 
+    # Keep only the configured experiment period.
     df = df[
         (df[date_column] >= pd.Timestamp(start))
         & (df[date_column] <= pd.Timestamp(end))
@@ -160,6 +195,7 @@ def load_price_csv(
         name="price",
     )
 
+    # Remove duplicate dates.
     price = price[
         ~price.index.duplicated(keep="last")
     ]
@@ -167,9 +203,16 @@ def load_price_csv(
     return price
 
 
+# ---------------------------------------------------------------------
+# SYNTHETIC VALIDATION UNIVERSE
+# ---------------------------------------------------------------------
+
 def _neighbor_names():
     if cfg.NEIGHBORS:
-        return [n["name"] for n in cfg.NEIGHBORS]
+        return [
+            n["name"]
+            for n in cfg.NEIGHBORS
+        ]
 
     return [
         f"neighbor_{i+1}"
@@ -184,6 +227,12 @@ def synthetic_universe(
     end: str,
     seed: int = None
 ):
+    """
+    Generate a synthetic process with known ground truth.
+
+    This is a validation fixture, NOT a model of the financial market.
+    """
+
     seed = (
         cfg.RANDOM_SEED
         if seed is None
@@ -192,7 +241,11 @@ def synthetic_universe(
 
     rng = np.random.default_rng(seed)
 
-    dates = pd.bdate_range(start, end)
+    dates = pd.bdate_range(
+        start,
+        end
+    )
+
     n = len(dates)
 
     names = _neighbor_names()
@@ -215,15 +268,21 @@ def synthetic_universe(
         for name in true_coupled
     }
 
-    n_lags = cfg.NUM_TRUE_MEMORY_LAGS_DEFAULT
+    n_lags = (
+        cfg.NUM_TRUE_MEMORY_LAGS_DEFAULT
+    )
 
-    k1_true = rng.uniform(0.15, 0.30)
+    k1_true = rng.uniform(
+        0.15,
+        0.30
+    )
 
     kernel_true = (
         k1_true
         * 0.5 ** np.arange(n_lags)
     )
 
+    # GARCH(1,1) parameters.
     omega_g = 1e-6
     alpha_g = 0.08
     beta_g = 0.88
@@ -236,6 +295,7 @@ def synthetic_universe(
     )
 
     eps = rng.standard_normal(n)
+
     r = np.zeros(n)
 
     for t in range(1, n):
@@ -265,7 +325,9 @@ def synthetic_universe(
             + np.sqrt(var[t]) * eps[t]
         )
 
-    price = np.exp(np.cumsum(r))
+    price = np.exp(
+        np.cumsum(r)
+    )
 
     price_series = pd.Series(
         price,
@@ -287,8 +349,15 @@ def synthetic_universe(
         f"{ {k: round(float(v), 4) for k, v in coupling.items()} }"
     )
 
-    return price_series, factors_df
+    return (
+        price_series,
+        factors_df
+    )
 
+
+# ---------------------------------------------------------------------
+# OBSERVED STATE CONSTRUCTION
+# ---------------------------------------------------------------------
 
 def build_state_space(
     price: pd.Series
@@ -307,16 +376,23 @@ def build_state_space(
             "Price series contains zero or negative values."
         )
 
-    df = pd.DataFrame({"price": price})
+    df = pd.DataFrame(
+        {"price": price}
+    )
 
+    # Log return:
+    # r(t) = ln(P(t) / P(t-1))
     df["r"] = np.log(
         df["price"]
         / df["price"].shift(1)
     )
 
+    # Rolling volatility.
     df["sigma"] = (
         df["r"]
-        .rolling(cfg.VOLATILITY_WINDOW)
+        .rolling(
+            cfg.VOLATILITY_WINDOW
+        )
         .std()
     )
 
@@ -324,9 +400,15 @@ def build_state_space(
         df
         .dropna()
         .reset_index()
-        .rename(columns={"index": "date"})
+        .rename(
+            columns={"index": "date"}
+        )
     )
 
+
+# ---------------------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------------------
 
 def main():
 
@@ -340,30 +422,47 @@ def main():
     parser.add_argument(
         "--demo",
         action="store_true",
-        help="Use synthetic validation data."
+        help=(
+            "Use synthetic validation data "
+            "with known ground truth."
+        ),
     )
 
     parser.add_argument(
         "--csv",
         default="usd_inr.csv",
-        help="Historical USD/INR CSV file."
+        help=(
+            "Historical USD/INR CSV file. "
+            "Default: usd_inr.csv"
+        ),
     )
 
     parser.add_argument(
         "--yahoo",
         action="store_true",
-        help="Attempt Yahoo Finance download."
+        help=(
+            "Attempt to download data "
+            "from Yahoo Finance."
+        ),
     )
 
     args = parser.parse_args()
 
+    # ================================================================
+    # MODE 1: SYNTHETIC DEMO
+    # ================================================================
+
     if args.demo:
 
-        print("[phase2] mode = synthetic demo")
+        print(
+            "[phase2] mode = synthetic demo"
+        )
 
-        price, factors_df = synthetic_universe(
-            cfg.START_DATE,
-            cfg.END_DATE
+        price, factors_df = (
+            synthetic_universe(
+                cfg.START_DATE,
+                cfg.END_DATE
+            )
         )
 
         factors_df.to_csv(
@@ -373,10 +472,20 @@ def main():
 
         source = "synthetic_demo"
 
+    # ================================================================
+    # MODE 2: LOCAL REAL DATA
+    # ================================================================
+
     elif not args.yahoo:
 
-        print("[phase2] mode = real data (local CSV)")
-        print(f"[phase2] loading: {args.csv}")
+        print(
+            "[phase2] mode = real data "
+            "(local CSV)"
+        )
+
+        print(
+            f"[phase2] loading: {args.csv}"
+        )
 
         price = load_price_csv(
             args.csv,
@@ -386,14 +495,26 @@ def main():
 
         source = "local_csv"
 
+    # ================================================================
+    # MODE 3: OPTIONAL YAHOO
+    # ================================================================
+
     else:
 
-        print("[phase2] mode = Yahoo Finance")
-        print(f"[phase2] ticker = {cfg.CURRENCY_PAIR}")
+        print(
+            "[phase2] mode = Yahoo Finance"
+        )
+
+        print(
+            f"[phase2] ticker = "
+            f"{cfg.CURRENCY_PAIR}"
+        )
 
         try:
 
-            if cfg.CURRENCY_PAIR.startswith("REPLACE"):
+            if cfg.CURRENCY_PAIR.startswith(
+                "REPLACE"
+            ):
                 raise ValueError(
                     "phase1_config.CURRENCY_PAIR "
                     "is not configured."
@@ -411,24 +532,32 @@ def main():
 
             raise RuntimeError(
                 "\n"
-                "[phase2] Yahoo Finance download failed.\n"
+                "[phase2] Yahoo Finance "
+                "download failed.\n"
                 f"Reason: {e}\n"
                 "\n"
-                "The program has STOPPED instead of "
-                "silently switching to synthetic data.\n"
+                "The program has STOPPED instead "
+                "of silently switching to "
+                "synthetic data.\n"
                 "\n"
-                "For the real experiment, place historical "
-                "prices in:\n"
+                "For the real experiment, place "
+                "historical prices in:\n"
                 "    usd_inr.csv\n"
                 "\n"
                 "Then run:\n"
                 "    py phase2_state_space.py\n"
                 "\n"
-                "For synthetic validation:\n"
+                "For the synthetic validation test, run:\n"
                 "    py phase2_state_space.py --demo\n"
             ) from e
 
-    state = build_state_space(price)
+    # ================================================================
+    # BUILD OBSERVED STATE
+    # ================================================================
+
+    state = build_state_space(
+        price
+    )
 
     state.to_csv(
         "state_space.csv",
@@ -442,59 +571,98 @@ def main():
 
     print(
         f"[phase2] date range = "
-        f"{state['date'].min().date()} -> "
+        f"{state['date'].min().date()} "
+        f"-> "
         f"{state['date'].max().date()}"
     )
 
-    print("\n[phase2] state head:")
-    print(state.head())
-
-    print("\n[phase2] return/volatility summary:")
     print(
-        state[["r", "sigma"]].describe()
-    )
-
-    adf_stat, adf_p = cfg.check_stationarity(
-        state["r"]
+        "\n[phase2] state head:"
     )
 
     print(
-        "\n[phase2] ADF stationarity test on r(t): "
+        state.head()
+    )
+
+    print(
+        "\n[phase2] return/volatility summary:"
+    )
+
+    print(
+        state[
+            ["r", "sigma"]
+        ].describe()
+    )
+
+    # ================================================================
+    # ADF STATIONARITY TEST
+    # ================================================================
+
+    adf_stat, adf_p = (
+        cfg.check_stationarity(
+            state["r"]
+        )
+    )
+
+    print(
+        "\n[phase2] ADF stationarity "
+        "test on r(t): "
         f"statistic={adf_stat:.4f}, "
         f"p={adf_p:.4g}"
     )
 
     if adf_p < 0.05:
+
         print(
             "[phase2] unit-root null rejected -- "
             "r(t) is consistent with the "
             "time-translation invariance "
-            "required for fixed-coefficient estimation."
+            "required for fixed-coefficient "
+            "estimation."
         )
+
     else:
+
         print(
             "[phase2] unit-root null NOT rejected -- "
             "reassess the return transform "
             "before proceeding to Phase 3."
         )
 
+    # ================================================================
+    # IMPORTANT SOURCE WARNING
+    # ================================================================
+
     if source == "synthetic_demo":
-        print("\n[phase2] WARNING:")
-        print("[phase2] This is SYNTHETIC validation data.")
+
         print(
-            "[phase2] Do NOT interpret these statistics "
-            "as empirical USD/INR evidence."
+            "\n[phase2] WARNING:"
         )
+
+        print(
+            "[phase2] This is SYNTHETIC validation data."
+        )
+
+        print(
+            "[phase2] Do NOT interpret these "
+            "statistics as empirical USD/INR evidence."
+        )
+
     else:
-        print("\n[phase2] Real-data Phase 2 completed successfully.")
-        print("[phase2] Output written to:")
-        print("    state_space.csv")
+
+        print(
+            "\n[phase2] Real-data Phase 2 "
+            "completed successfully."
+        )
+
+        print(
+            "[phase2] Output written to:"
+        )
+
+        print(
+            "    state_space.csv"
+        )
 
 
 if __name__ == "__main__":
     main()
-PY
-
-echo "=== VERIFY NEW VERSION ==="
-grep -n "mode = real data\|generic synthetic fallback\|--csv\|--demo\|--yahoo" phase2_state_space.py
-

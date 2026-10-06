@@ -1,0 +1,40 @@
+[lag-selection] conditional ElasticNet CV MSE by p:
+    p= 8  CV_MSE=6.42231202e-06
+    p=10  CV_MSE=6.42258656e-06
+    p= 9  CV_MSE=6.42389538e-06
+    p= 5  CV_MSE=6.43712724e-06
+    p= 4  CV_MSE=6.43725844e-06
+    p= 7  CV_MSE=6.43740117e-06
+    p= 6  CV_MSE=6.43755232e-06
+    p= 3  CV_MSE=6.43837729e-06
+    p= 1  CV_MSE=6.45764897e-06
+    p= 2  CV_MSE=6.45822130e-06
+[lag-selection] selected p = 8 (CV_MSE=6.42231202e-06)
+[phase7] lag order p = 8 (matches Phase 4's conditional CV selection)
+[phase7] reusing Phase 4's tuned alpha=3.86e-04, l1_ratio=0.85 for all walk-forward refits
+=== WALK-FORWARD EVALUATION (expanding window, refit every 20 days, last 200 days tested) ===
+
+naive persistence                MAE=0.001223  RMSE=0.001790  R2=-1.6861
+naive persistence                F1=0.4043  confusion_matrix=[[50, 56], [56, 38]]
+OLS, no memory kernel            MAE=0.000817  RMSE=0.001204  R2=-0.2146
+OLS, no memory kernel            F1=0.5395  confusion_matrix=[[43, 63], [36, 58]]
+VARX-GLE (candidate)             MAE=0.000758  RMSE=0.001093  R2=-0.0018
+VARX-GLE (candidate)             F1=0.6395  confusion_matrix=[[0, 106], [0, 94]]
+RandomForest (nonlinear check)   MAE=0.000809  RMSE=0.001381  R2=-0.5997
+RandomForest (nonlinear check)   F1=0.5752  confusion_matrix=[[39, 67], [29, 65]]
+
+=== DIAGNOSTIC TESTS (candidate model residuals) ===
+Ljung-Box (lag 5, 10) p-values:
+5     0.000002
+10    0.000031
+>> significant residual autocorrelation remains -> the selected linear conditional-mean specification does not fully explain temporal dependence; consider a richer conditional-mean model rather than increasing p solely to eliminate this diagnostic.
+
+ARCH-LM test p-value: 0.1130
+>> no significant remaining ARCH effect -> GARCH(1,1) noise model looks adequate.
+
+CUSUM structural-break test: statistic=1.0344, p=0.2349
+>> no significant parameter instability detected over the test window.
+
+>> ACTION: adjust the flagged setting, re-run Phase 4 (and Phase 5 if GARCH order changed), then re-run this phase. This is the framework's iterative improvement loop -- statistical tests plus a re-fit, no gradient descent required.
+
+[phase7] saved evaluation_report.txt

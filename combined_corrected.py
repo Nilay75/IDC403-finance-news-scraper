@@ -1,23 +1,4 @@
-f"CUSUM p (mean of z): {cusum_p:.4f}"
-              f"{'  -> mean of standardized errors shifts over the test window' if flags['standardized_error_mean_shift'] else ''}"]
-    report = "\n".join(lines)
-    print(report)
-    _p("evaluation_report.txt").write_text(report)
-    return {"test_window": int(tw), "metrics": metrics,
-            "CW_p_candidate_vs_drift": cw_drift, "CW_p_memory_vs_nomemory": cw_mem,
-            "density": {"ks_p": ks_p, "cover_p05": cov05, "cover_p95": cov95,
-                        "log_score_gain_vs_const_gauss": dls},
-            "ljung_box_p": {str(k): float(v) for k, v in lb.items()},
-            "arch_lm_p": arch_p, "cusum_p": cusum_p, "flags": flags}
-
-
-# ------------------------------------------------------------------ main
-def parse_args():
-    # Command-line interface; every option except the file paths overrides an entry of cfg.
-    ap = argparse.ArgumentParser(description="Minimal GLE/VARX currency pipeline",
-                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    ap.add_argument("--csv", default="usd_inr.csv")
-    ap.add_argument("--market", default="market_drives.csv")
+ap.add_argument("--market", default="market_drives.csv")
     ap.add_argument("--demo", action="store_true", help="synthetic data, known ground truth")
     ap.add_argument("--outdir", default="pipeline_output")
     ap.add_argument("--start"), ap.add_argument("--end")

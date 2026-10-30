@@ -26,7 +26,7 @@ MODEL_SCRIPT = PROJECT_ROOT / "IDC403_dashboard_updated.py"
 OUTPUT_ROOT = PROJECT_ROOT / "updated_data" / "date_picker_runs"
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", "8765"))
-SIMULATION_PATHS = 500
+SIMULATION_PATHS = 200
 
 PAGE = r"""<!doctype html>
 <html lang="en">

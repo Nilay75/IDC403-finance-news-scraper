@@ -1,0 +1,9 @@
+
+numpy
+pandas
+scipy
+statsmodels
+scikit-learn>=1.7
+arch
+matplotlib
+plotly

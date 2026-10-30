@@ -2105,7 +2105,7 @@ def dashboard_main():
     ap.add_argument('--seed',type=int,default=20261029)
     ap.add_argument('--origin-date', help='Forecast origin date (YYYY-MM-DD); use only observations on or before this date.')
     ap.add_argument('--skip-existing-usdinr-run',action='store_true')
-    a=ap.parse_args();sims=500;root=Path(a.project_dir).resolve();out=(root/a.outdir).resolve();out.mkdir(parents=True,exist_ok=True)
+    a=ap.parse_args();a.n_sims=200;sims=200;root=Path(a.project_dir).resolve();out=(root/a.outdir).resolve();out.mkdir(parents=True,exist_ok=True)
     fxpath=(root/a.fx_csv).resolve();mpath=(root/a.market_csv).resolve();gpath=(root/a.gold_csv).resolve()
     for p in [fxpath,mpath,gpath]:
         if not p.exists():raise FileNotFoundError(f'Missing input file: {p}')

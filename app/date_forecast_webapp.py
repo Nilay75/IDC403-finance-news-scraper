@@ -65,8 +65,8 @@ button:disabled{opacity:.6;cursor:wait}
 <button id="go" type="submit">Generate forecast</button>
 </form>
 <div id="status" class="muted" aria-live="polite"></div>
-<div class="meta"><span class="pill">500 simulation paths</span><span class="pill">USD/INR</span><span class="pill">Gold · USD/troy oz</span><span class="pill">Brent · USD/barrel</span></div>
-<p class="small muted">Forecast outputs are written to a run-specific folder. Simulation count is fixed at 500. Results are experimental and should not be treated as investment advice.</p>
+<div class="meta"><span class="pill">200 simulation paths</span><span class="pill">USD/INR</span><span class="pill">Gold · USD/troy oz</span><span class="pill">Brent · USD/barrel</span></div>
+<p class="small muted">Forecast outputs are written to a run-specific folder. Simulation count is fixed at 200. Results are experimental and should not be treated as investment advice.</p>
 </main></body></html>"""
 
 def latest_fx_date() -> str:

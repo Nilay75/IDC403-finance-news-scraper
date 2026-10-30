@@ -1,0 +1,9 @@
+
+services:
+  - type: web
+    name: idc403-forecast-dashboard
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app/date_forecast_webapp.py
+    healthCheckPath: /

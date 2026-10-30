@@ -1,28 +1,16 @@
-#IDC403 | Quantitative Finance & Market Dynamics
-Research project · Python · Econometrics · Monte Carlo simulation
+## Live Forecast Dashboard
 
-Overview
+Access the deployed multi-asset forecasting dashboard:
 
-A research framework investigating currency-market dynamics using memory-based stochastic modelling.
+**[Open Live Dashboard](https://idc403-forecast-dashboard.onrender.com)**
 
-Research components
-- Generalized Langevin Equation (GLE)
-- VARX and exponential-memory states
-- GARCH volatility modelling
-- Monte Carlo forecasting
-- Walk-forward evaluation
-Multi-asset dashboard
+### Example Forecast
 
-USD/INR · Gold (USD/troy oz) · Brent crude (USD/barrel)
+[View Forecast — Origin: 1 October 2026 | Horizon: 756 Business Days | 200 Simulations](https://idc403-forecast-dashboard.onrender.com/dashboard/origin_20261001_h756_s200)
 
-Methodology and evaluation
+The dashboard provides experimental forecasts for:
+- USD/INR exchange rate
+- Gold (USD/troy oz)
+- Brent crude oil (USD/barrel)
 
-Explain model assumptions, benchmark comparisons, out-of-sample testing and limitations.
-
-Installation and usage
-
-Provide reproducible setup commands and input-data requirements.
-
-Limitations
-
-Distinguish experimental forecasts from validated predictive performance.
+*Forecasts are experimental research outputs and should not be treated as investment advice.*
